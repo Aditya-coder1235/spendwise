@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://spendwise-api.onrender.com/api/:path*"
+      "destination": "https://spendwise-api-eugc.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
