@@ -15,7 +15,8 @@
     "test": "npm run test -w server && npm run test -w client",
     "test:server": "npm run test -w server",
     "test:client": "npm run test -w client",
-    "lint": "npm run lint -w server && npm run lint -w client"
+    "lint": "npm run lint -w server && npm run lint -w client",
+    "set:api": "node scripts/set-api-url.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

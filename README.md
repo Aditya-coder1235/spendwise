@@ -117,6 +117,7 @@ Run commands from the repository root.
 | `npm start` | Start the production API server |
 | `npm run seed` | Reset and seed the demo account |
 | `npm run lint` | Lint both workspaces |
+| `npm run set:api -- https://your-api.onrender.com` | Point the Vercel `/api` proxy at a deployed Render API |
 | `npm test` | Run API integration tests and frontend tests |
 | `npm run test:server` | Run API tests only |
 | `npm run test:client` | Run frontend tests only |

@@ -1,0 +1,60 @@
+# Render Blueprint for the SpendWise API.
+#
+# Deploy: Render Dashboard -> New -> Blueprint -> select this repo.
+# Render reads this file and creates the web service below. Environment
+# variables marked `sync: false` are prompted for during creation and are
+# never committed to the repository.
+#
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: spendwise-api
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    autoDeploy: true
+    rootDir: .
+    # `npm ci` installs the root, client and server workspaces from the lockfile.
+    # The API itself needs no build step.
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Pin the runtime so a Render default change cannot break the build.
+      - key: NODE_VERSION
+        value: "22"
+
+      # Do NOT set PORT: Render injects it and the app reads process.env.PORT.
+
+      - key: MONGODB_URI
+        sync: false
+
+      # Comma-separated. Must include the exact Vercel production origin,
+      # because Vercel forwards the browser's Origin header through the proxy.
+      - key: CLIENT_ORIGIN
+        sync: false
+
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+
+      - key: ACCESS_TOKEN_TTL
+        value: 15m
+      - key: REFRESH_TOKEN_TTL_DAYS
+        value: "7"
+
+      # Cookie flags: Secure is required because the app is served over HTTPS.
+      - key: COOKIE_SECURE
+        value: "true"
+      # Render terminates TLS one hop in front of the app.
+      - key: TRUST_PROXY
+        value: "1"
+
+      # Recurring transactions only advance while the service is awake.
+      - key: RECURRING_CRON
+        value: "*/15 * * * *"
