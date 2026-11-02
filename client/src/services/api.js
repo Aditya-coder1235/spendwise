@@ -12,12 +12,29 @@ function readCookie(name) {
   return match ? decodeURIComponent(match.slice(prefix.length)) : null;
 }
 
+// Render's free tier can take 30–60 seconds to wake from sleep. Keep the
+// request alive long enough for the first response after a cold start.
+const COLD_START_STATUSES = new Set([502, 503, 504]);
+const COLD_START_RETRY_DELAYS = [5_000, 15_000];
+
 export const client = axios.create({
   baseURL,
   withCredentials: true,
-  timeout: 20_000,
+  timeout: 60_000,
   headers: { 'Content-Type': 'application/json' },
 });
+
+function canRetryColdStart(config, status) {
+  if (!config || !COLD_START_STATUSES.has(status)) return false;
+  if ((config._coldStartRetries || 0) >= COLD_START_RETRY_DELAYS.length) return false;
+
+  const method = (config.method || 'get').toLowerCase();
+  const url = config.url || '';
+
+  // Replaying reads and the two auth entry points is safe. Do not replay
+  // mutations such as creating a transaction.
+  return method === 'get' || url.includes('/auth/login') || url.includes('/auth/register');
+}
 
 client.interceptors.request.use((config) => {
   const csrf = readCookie('sw_csrf');
@@ -33,6 +50,14 @@ client.interceptors.response.use(
     const original = error.config;
     const status = error.response?.status;
     const url = original?.url || '';
+
+    if (canRetryColdStart(original, status)) {
+      original._coldStartRetries = (original._coldStartRetries || 0) + 1;
+      const delay = COLD_START_RETRY_DELAYS[original._coldStartRetries - 1];
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return client(original);
+    }
+
     const skipRefresh =
       !original ||
       original._retried ||
